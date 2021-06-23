@@ -3,3 +3,19 @@
 h1 {
     color: $red-color;
 }
+
+.card-course-item {
+    margin-top: 16px;
+}
+
+.user-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    margin-top: 50%;
+    transform: translateY(-25%);
+}
+
+.select-options {
+    margin: 0 16px;
+}

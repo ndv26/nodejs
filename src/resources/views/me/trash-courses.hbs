@@ -1,0 +1,157 @@
+<form class="mt-4" method="POST" action="/courses/handle-form-actions">
+    <div style="display: flex; justify-content: space-between">
+        <h3 class="mb-4">Khoá học đã xoá</h3>
+        <a href="/me/stored/courses"> 
+            <i class="fas fa-undo-alt"></i>
+            Quay lại
+        </a>
+    </div>
+
+    <div class="mt-4 mb-4 d-flex align-items-center">
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="checkbox-all">
+            <label class="form-check-label" for="checkbox-all">Chọn tất cả</label>
+        </div>
+        <div class="select-options">
+            <select id="select-all-options" class="form-select" name="action" required>
+                <option value="">-- Hành Động --</option>
+                <option value="restore">Khôi phục</option>
+                <option value="deleteForever">Xoá vĩnh viễn</option>
+            </select>
+        </div>
+        <button class="btn btn-primary btn-sm checkbox-submit-btn" disabled>Thực hiện</button>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col"></th>
+                <th scope="col">#</th>
+                <th scope="col">Tên khoá học</th>
+                <th scope="col">Mô tả</th>
+                <th scope="col">Thời gian xoá</th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each courses}}
+            <tr>
+                <th>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="courseIds[]" value="{{this._id}}">
+                    </div>
+                </th>
+                <th scope="row">{{ sum @index 1 }}</th>
+                <td>{{this.name}}</td>
+                <td>{{this.description}}</td>
+                <td>{{this.deletedAt}}</td>
+                <td>
+                    <a href="" class="btn btn-dark btn-restore" data-id="{{this._id}}">Khôi phục</a>
+                </td>
+                <td>
+                    <a href="" class="btn btn-dark" data-toggle="modal" data-id="{{this._id}}" data-target="#delete-course-modal">Xoá vĩnh viễn</a>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td class="text-center" colspan="5">
+                    Thùng rác rỗng. 
+                    <a href="/me/stored/courses">Quay lại</a>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</form>
+
+{{!-- Confirm delete course --}}
+
+<div class="modal" id="delete-course-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xoá vĩnh viễn khoá học?</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Khoá học của bạn sẽ không thể được khôi phục. Bạn đã chắc chắn về quyết định này?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn-delete-course" class="btn btn-danger">Xoá bỏ</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Huỷ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<form method="POST" name="restore-form"></form>
+<form method="POST" name="force-delete-form"></form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        
+        var courseID; 
+        var action;
+        var forceDeleteForm = document.forms['force-delete-form'];
+        var restoreForm = document.forms['restore-form'];
+        var btnDeleteCourse = document.getElementById('btn-delete-course');
+        var btnRestore = $('.btn-restore');
+        var checkboxAll = $('#checkbox-all');
+        var checkboxCourseItems = $('input[name="courseIds[]"]');
+        var checkboxSubmitBtn = $('.checkbox-submit-btn');
+        var selectOptions = $('#select-all-options');
+
+        // Khi dialog confirm clicked
+        $('#delete-course-modal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            courseID = button.data('id');
+        })
+        
+        // Khi click xoá vv
+        btnDeleteCourse.onclick = function () {
+            forceDeleteForm.action = `/courses/${courseID}/force-delete?_method=DELETE`;
+            forceDeleteForm.submit();
+        }
+
+        btnRestore.click(function (e) {
+            e.preventDefault();
+            var courseID = $(this).data('id');
+            restoreForm.action = `/courses/${courseID}/restore?_method=PATCH`;
+            restoreForm.submit();
+        })
+
+        // Khi checkboxAll changed
+        checkboxAll.change(function (e) {
+            var isCheckedAll = $(this).prop('checked');
+            checkboxCourseItems.prop('checked', isCheckedAll);
+            renderCheckboxSubmitBtn();
+        })
+
+        // Khi bỏ check 1 thằng thì thằng checkboxAll k check nữa
+        checkboxCourseItems.change(function (e) {
+            var isCheckedAll = checkboxCourseItems.length === $('input[name="courseIds[]"]:checked').length;
+            checkboxAll.prop('checked', isCheckedAll);
+            renderCheckboxSubmitBtn();
+        })
+
+        // Khi select option 
+        selectOptions.onchange = function (e) {
+            action = selectOptions.value;
+            console.log(action);
+        }
+
+        // re-render lại submit btn khi có item đc check
+        function renderCheckboxSubmitBtn () {
+            var checkedCount = $('input[name="courseIds[]"]:checked').length;
+            if (checkedCount > 0) {
+                checkboxSubmitBtn.attr('disabled', false);
+            } else {
+                checkboxSubmitBtn.attr('disabled', true);
+            }
+        }
+    })
+</script>
